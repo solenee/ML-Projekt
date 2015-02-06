@@ -147,7 +147,7 @@ public class NearestNeighbor extends ANearestNeighbor {
 				// TODO first scale the values !!
 				d += Math.abs( ((Double)instance1.get(i)) - ((Double)instance2.get(i)) );
 			} else if ( (instance1.get(i) instanceof String ) && (instance2.get(i) instanceof Double ) ) {
-				d += Math.abs( ((Double)instance1.get(i)) - ((Double)instance2.get(i)) );
+				d += ((String)instance1.get(i)).equals((String)instance2.get(i)) ? 1 : 0;
 			} else {
 				// Should not happen
 				throw new RuntimeException("Attributes don't pass with each other");
@@ -159,8 +159,20 @@ public class NearestNeighbor extends ANearestNeighbor {
 	@Override
 	protected double determineEuclideanDistance(List<Object> instance1,
 			List<Object> instance2) {
-		// TODO Auto-generated method stub
-		return 0;
+		int nbAttributes = instance1.size();
+		double sd2 = 0;
+		for (int i=0; i<nbAttributes; i++) {
+			if ( (instance1.get(i) instanceof Double ) && (instance2.get(i) instanceof Double ) ) {
+				// TODO first scale the values !!
+				sd2 += Math.pow( Math.abs( ((Double)instance1.get(i)) - ((Double)instance2.get(i)) ), 2);
+			} else if ( (instance1.get(i) instanceof String ) && (instance2.get(i) instanceof Double ) ) {
+				sd2 += ((String)instance1.get(i)).equals((String)instance2.get(i)) ? 1 : 0;
+			} else {
+				// Should not happen
+				throw new RuntimeException("Attributes don't pass with each other");
+			}
+		}
+		return Math.sqrt(sd2);
 	}
 	
 	@Override
