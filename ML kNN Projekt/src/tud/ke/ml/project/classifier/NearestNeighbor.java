@@ -137,12 +137,23 @@ public class NearestNeighbor extends ANearestNeighbor {
 		return kNeighbors;
 	}
 	
-	
 	@Override
 	protected double determineManhattanDistance(List<Object> instance1,
 			List<Object> instance2) {
-		// TODO Auto-generated method stub
-		return 0;
+		int nbAttributes = instance1.size();
+		double d = 0;
+		for (int i=0; i<nbAttributes; i++) {
+			if ( (instance1.get(i) instanceof Double ) && (instance2.get(i) instanceof Double ) ) {
+				// TODO first scale the values !!
+				d += Math.abs( ((Double)instance1.get(i)) - ((Double)instance2.get(i)) );
+			} else if ( (instance1.get(i) instanceof String ) && (instance2.get(i) instanceof Double ) ) {
+				d += Math.abs( ((Double)instance1.get(i)) - ((Double)instance2.get(i)) );
+			} else {
+				// Should not happen
+				throw new RuntimeException("Attributes don't pass with each other");
+			}
+		}
+		return d;
 	}
 	
 	@Override
