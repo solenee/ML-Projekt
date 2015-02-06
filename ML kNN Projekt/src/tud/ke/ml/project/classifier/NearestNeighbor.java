@@ -2,7 +2,10 @@ package tud.ke.ml.project.classifier;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedList;
@@ -29,7 +32,7 @@ public class NearestNeighbor extends ANearestNeighbor {
 	
 	@Override
 	protected Object vote(List<Pair<List<Object>, Double>> subset) {
-		// TODO Auto-generated method stub
+		// OK
 		Map<Object, Double> votes;
 		if (isInverseWeighting()) {
 			votes = getWeightedVotes(subset);
@@ -48,8 +51,7 @@ public class NearestNeighbor extends ANearestNeighbor {
 	@Override
 	protected Map<Object, Double> getUnweightedVotes(
 			List<Pair<List<Object>, Double>> subset) {
-		// TODO Auto-generated method stub
-		// TO TEST
+		// TODO TEST
 		HashMap<Object, Double> map = new HashMap<Object, Double>();
 		
 		for (Pair<List<Object>, Double> pair : subset) {
@@ -72,8 +74,7 @@ public class NearestNeighbor extends ANearestNeighbor {
 	
 	@Override
 	protected Object getWinner(Map<Object, Double> votesFor) {
-		// TODO Auto-generated method stub
-		// TO TEST
+		// TODO TEST
 		// What to do when ex-aequo ?? : When ex-aequo, return the first class found with the highest number of votes
 		
 		// find the highest Double value
@@ -91,34 +92,51 @@ public class NearestNeighbor extends ANearestNeighbor {
 	
 	@Override
 	protected List<Pair<List<Object>, Double>> getNearest(List<Object> testdata) {
-		// TODO Auto-generated method stub
+		// TO TEST
+		int k = getkNearest();
 		
-		List<Pair<List<Object>, Double>> kNeighbors = new ArrayList<Pair<List<Object>, Double>>();
-		
+		Object data[] = new Object[testdata.size()];
+				
 		// compute distance from testdata instance to each instance of the trainData
 		List<Double> distances = new ArrayList<Double>();
 		switch (getMetric()) {
 		case 0 :
 			// use Manhattan distance
-			for (List<Object> instance : trainData) {
-				distances.add(determineManhattanDistance(testdata, instance));
+			for (int i=0; i<data.length; i++)  {
+				data[i] = new Pair<List<Object>, Double>(trainData.get(i), determineManhattanDistance(testdata, trainData.get(i)));
 			}
 			break;
 		case 1 : 
 			// use Euclidian distance
-			for (List<Object> instance : trainData) {
-				distances.add(determineEuclideanDistance(testdata, instance));
+			for (int i=0; i<data.length; i++)  {
+				data[i] = new Pair<List<Object>, Double>(trainData.get(i), determineEuclideanDistance(testdata, trainData.get(i)));
 			}
 			break;
 		default :
 			throw new RuntimeException("Unhandled metric : "+getMetric());
 		}
 			
-		// TODO pick the getKNearest() better instances : with smallest distances
+		// pick the getKNearest() better instances : with smallest distances
+		Arrays.sort(data, new Comparator<Object>() {
+			@Override
+			public int compare(Object o1, Object o2) {
+				Pair<List<Object>, Double> instance1 = (Pair<List<Object>, Double>) o1;
+				Pair<List<Object>, Double> instance2 = (Pair<List<Object>, Double>) o2;
+				return instance1.getB().compareTo(instance2.getB());
+			}
+		});
+		
+		// get the k first values
+		List<Pair<List<Object>, Double>> kNeighbors = new ArrayList<Pair<List<Object>, Double>>();
+		for (int i=0; i<k; i++) {
+			kNeighbors.add((Pair<List<Object>, Double>)data[i]);
+			System.out.println("result["+i+"] = "+((Pair<List<Object>, Double>)data[i]).getB());
+		}
 		
 		// assert kNeighbors.size() == getKNearest() (except if some distances are the same)
 		return kNeighbors;
 	}
+	
 	
 	@Override
 	protected double determineManhattanDistance(List<Object> instance1,
