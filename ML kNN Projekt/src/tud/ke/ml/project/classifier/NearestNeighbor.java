@@ -105,7 +105,7 @@ public class NearestNeighbor extends ANearestNeighbor {
 		// TO TEST
 		int k = getkNearest();
 		
-		Object data[] = new Object[testdata.size()];
+		Object data[] = new Object[trainData.size()];
 
 		// Initialize scaling and translation
 		double[][] t = normalizationScaling();
@@ -146,7 +146,7 @@ public class NearestNeighbor extends ANearestNeighbor {
 		// (may be more than k if many instances have the same distance)
 		// TODO implement the decision function
 		List<Pair<List<Object>, Double>> kNeighbors = new ArrayList<Pair<List<Object>, Double>>();
-		for (int i=0; i<k; i++) {
+		for (int i=0; i<k && i<data.length; i++) {
 			kNeighbors.add((Pair<List<Object>, Double>)data[i]);
 			System.out.println("result["+i+"] = "+((Pair<List<Object>, Double>)data[i]).getB());
 		}
@@ -165,7 +165,7 @@ public class NearestNeighbor extends ANearestNeighbor {
 			if ( (instance1.get(i) instanceof Double ) && (instance2.get(i) instanceof Double ) ) {
 				// scaling done in getNearest
 				d += ( Math.abs( ((Double)instance1.get(i)) - ((Double)instance2.get(i)) ) + translation[i] ) / scaling[i];
-			} else if ( (instance1.get(i) instanceof String ) && (instance2.get(i) instanceof Double ) ) {
+			} else if ( (instance1.get(i) instanceof String ) && (instance2.get(i) instanceof String ) ) {
 				d += ( (((String)instance1.get(i)).equals((String)instance2.get(i)) ? 1 : 0) + translation[i] ) / scaling[i];
 			} else {
 				// Should not happen
@@ -185,7 +185,7 @@ public class NearestNeighbor extends ANearestNeighbor {
 				// scaling done in getNearest
 				double d = ( Math.abs( ((Double)instance1.get(i)) - ((Double)instance2.get(i)) ) + translation[i] ) / scaling[i];
 				sd2 += Math.pow( d, 2);
-			} else if ( (instance1.get(i) instanceof String ) && (instance2.get(i) instanceof Double ) ) {
+			} else if ( (instance1.get(i) instanceof String ) && (instance2.get(i) instanceof String ) ) {
 				double d = ( (((String)instance1.get(i)).equals((String)instance2.get(i)) ? 1 : 0) + translation[i] ) / scaling[i];
 				sd2 += Math.pow( d, 2);
 			} else {
