@@ -209,7 +209,7 @@ public class NearestNeighbor extends ANearestNeighbor {
 				d += ( Math.abs(normalize(value1,translation[i],scaling[i]) - normalize(value2,translation[i],scaling[i]))  );
 			} else if ( (instance1.get(i) instanceof String ) && (instance2.get(i) instanceof String ) ) {
 				// translation[i] == 0 , scaling[i] == 1
-				d += ((String)instance1.get(i)).equals((String)instance2.get(i)) ? 1 : 0;
+				d += ((String)instance1.get(i)).equals((String)instance2.get(i)) ? 0 : 1;
 			} else {
 				// Should not happen
 				throw new RuntimeException("Attributes don't pass with each other");
@@ -231,7 +231,7 @@ public class NearestNeighbor extends ANearestNeighbor {
 				sd2 += Math.pow( d, 2);
 			} else if ( (instance1.get(i) instanceof String ) && (instance2.get(i) instanceof String ) ) {
 				// translation[i] == 0 , scaling[i] == 1
-				double d = ((String)instance1.get(i)).equals((String)instance2.get(i)) ? 1 : 0 ;
+				double d = ((String)instance1.get(i)).equals((String)instance2.get(i)) ? 0 : 1 ;
 				sd2 += Math.pow( d, 2);  //the square of 0 or 1 is still 0 or 1..
 			} else {
 				// Should not happen
