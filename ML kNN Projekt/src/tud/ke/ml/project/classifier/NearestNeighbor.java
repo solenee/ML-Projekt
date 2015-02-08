@@ -233,10 +233,60 @@ public class NearestNeighbor extends ANearestNeighbor {
 	@Override
 	protected double[][] normalizationScaling() {
 		double[][] results = null;
+		double[] maxvalues = null;
+		double[] minvalues = null;
 		if ( !(trainData == null) && !trainData.isEmpty() ) {
 			// dimension of data ie number of attributes 
 			int dim = trainData.get(0).size(); 
-			
+
+			results = new double[2][dim];
+				
+			if (isNormalizing()) {
+				maxvalues = new double[dim];
+				minvalues = new double[dim];
+				Arrays.fill(minvalues, 0);
+				Arrays.fill(maxvalues, 1);
+				//determine minimal and maximal values per attribute
+				for (int inst=0; inst<trainData.size(); inst++) { //iterate over instances
+					List<Object> instance;
+					instance = trainData.get(inst);
+					for (int attr=0; attr<dim; attr++) {	//iterate over attributes
+						if (!(instance.get(attr) instanceof String)) { //only consider numerical attributes
+							double value = (Double) instance.get(attr);
+							if ((minvalues[attr] == 0) && (maxvalues[attr] == 1)) { //initial values
+								minvalues[attr] = value;
+								maxvalues[attr] = value;
+							} else if (minvalues[attr] > value) {	//new minimum
+								minvalues[attr] = value;
+							} else if (maxvalues[attr] < value) {	//new maximum
+								maxvalues[attr] = value;
+							}
+						}
+					}
+				}
+				//compute scaling and translation
+				for (int attr=0; attr<dim; attr++) {
+					results[0][attr] = maxvalues[attr] - minvalues[attr]; //1-0=1 for string attributes
+					results[1][attr] = -minvalues[attr];	//0 for string attributes
+				}
+			} else {
+				Arrays.fill(results[0], 1);
+				Arrays.fill(results[1], 0);
+			}
+		}
+		
+		return results;
+		
+	}
+		
+	/* Version Soso
+	protected double[][] normalizationScaling() {
+		double[][] results = null;
+		double[] maxvalues = null;
+		double[] minvalues = null;
+		if ( !(trainData == null) && !trainData.isEmpty() ) {
+			// dimension of data ie number of attributes 
+			int dim = trainData.get(0).size(); 
 			results = new double[dim][2];
 			
 			// translation
@@ -275,13 +325,14 @@ public class NearestNeighbor extends ANearestNeighbor {
 			for (int j=0; j<results[0].length; j++) {
 					if (results[0][j] < 1) {
 						results[0][j] = 1d;
-					}
+			}
 			}
 		}
 		
 		return results;
-		
+			
 	}
+	*/
 	
 	@Override
 	protected String[] getMatrikelNumbers() {
