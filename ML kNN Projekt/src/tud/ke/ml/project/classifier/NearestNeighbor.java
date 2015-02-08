@@ -1,19 +1,12 @@
 package tud.ke.ml.project.classifier;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
-import java.util.TreeMap;
 
 import tud.ke.ml.project.framework.classifier.ANearestNeighbor;
 import tud.ke.ml.project.util.Pair;
@@ -29,10 +22,28 @@ public class NearestNeighbor extends ANearestNeighbor {
 	protected double[] translation;
 	
 	private List<List<Object>> trainData;
+	private HashMap<Object, Integer> apriori;
 	
+	/**
+	 * Compute an a priori indicator of the classes distribution over the training set : 'apriori' attribute.
+	 * In case of ex-aequo winners in getWinner(), the winner should be the class which 
+	 * has the higher associated number in 'apriori' ie the higher occurrence in training set
+	 */
+	private void compute_apriori() {
+		HashMap<Object, Integer> map = new HashMap<Object, Integer>();
+		
+		for (List<Object> trainingInstance : trainData) {
+			Object instance_class = trainingInstance.get(getClassAttribute());
+			if (!map.containsKey(instance_class)) {
+				map.put(instance_class, new Integer(0));
+			}
+			map.put(instance_class, map.get(instance_class)+1);
+		}	
+		apriori = map;
+	}
+
 	@Override
 	protected Object vote(List<Pair<List<Object>, Double>> subset) {
-		// OK
 		Map<Object, Double> votes;
 		if (isInverseWeighting()) {
 			votes = getWeightedVotes(subset);
@@ -46,6 +57,7 @@ public class NearestNeighbor extends ANearestNeighbor {
 	protected void learnModel(List<List<Object>> traindata) {
 		// Instance based classifier => there is no learning, we just save all instances of the train data 
 		this.trainData = traindata;
+		compute_apriori();
 	}
 	
 	@Override
@@ -75,34 +87,49 @@ public class NearestNeighbor extends ANearestNeighbor {
 				map.put(instance_class, new Double(0));
 			}
 			// TODO Change " == 0" into " < eps"
-			Double inverseDistance = (pair.getB() == 0) ? 0 : (1/pair.getB()); 
-			map.put(instance_class, map.get(instance_class)+inverseDistance); // TO TEST
+			Double inverseDistance = (pair.getB() == 0) ? Double.MAX_VALUE : (1/pair.getB()); 
+			map.put(instance_class, map.get(instance_class)+inverseDistance);
 		}	
 		return map;
 	}
 	
 	@Override
 	protected Object getWinner(Map<Object, Double> votesFor) {
-		// TODO What to do when there are ex-aequo winners ?? 
-		// Proposition : use a apriori fonction so that the winner be the candidate which the most frequent in training set 
-		// For now : When ex-aequo, return the first class found with the highest number of votes
+		// What to do when there are ex-aequo winners ?? 
+		// Method : use a apriori fonction so that the winner be the candidate
+		// which is the most frequent in training set 
 		
 		// find the highest Double value
 		if ( (votesFor == null) || (votesFor.size() == 0) ) {
 			return null;
 		}
 		Object winner = null;
+		List<Object> ex_aequo = new ArrayList<Object>();
 		for (Entry<Object, Double> e : votesFor.entrySet()) {
-			if ( (winner == null) || (e.getValue() > votesFor.get(winner)) ) {
+			if (winner == null) {
 				winner = e.getKey();
+			} else if ( (e.getValue() == votesFor.get(winner)) && (apriori.get(e.getValue()) > apriori.get(winner))) {
+				winner = e.getKey();
+				ex_aequo.add(e.getKey());
+			} else if (e.getValue() > votesFor.get(winner)) {
+				winner = e.getKey();
+				ex_aequo.clear();
 			} 
+			
+			// Old version
+//			if ( (winner == null) || (e.getValue() > votesFor.get(winner)) ) {
+//				winner = e.getKey();
+//			} 
+			
+		}
+		if (ex_aequo.size() > 0) {
+			System.out.println("Ex-aequo : "+ex_aequo.size()+1);
 		}
 		return winner;
 	}
 	
 	@Override
 	protected List<Pair<List<Object>, Double>> getNearest(List<Object> testdata) {
-		// TO TEST
 		int k = getkNearest();
 		
 		Object data[] = new Object[trainData.size()];
@@ -144,14 +171,21 @@ public class NearestNeighbor extends ANearestNeighbor {
 		
 		// get the instances whose distance is among the k smallest values 
 		// (may be more than k if many instances have the same distance)
-		// TODO implement the decision function
+		// TODO implement the decision function : see compute_apriori 
+		System.out.println("k = "+k); 
 		List<Pair<List<Object>, Double>> kNeighbors = new ArrayList<Pair<List<Object>, Double>>();
 		for (int i=0; i<k && i<data.length; i++) {
 			kNeighbors.add((Pair<List<Object>, Double>)data[i]);
-			System.out.println("result["+i+"] = "+((Pair<List<Object>, Double>)data[i]).getB());
+			System.out.println("result["+i+"] = class:"+((Pair<List<Object>, Double>)data[i]).getA().get(getClassAttribute())+" / distance:"+((Pair<List<Object>, Double>)data[i]).getB());
+		}
+		int lastNeighbor = kNeighbors.size()-1;
+		
+		while( (lastNeighbor<data.length-1) && (kNeighbors.get(lastNeighbor).getB() == ((Pair<List<Object>, Double>)data[lastNeighbor+1]).getB()) ) {
+			lastNeighbor += 1; 
+			kNeighbors.add((Pair<List<Object>, Double>)data[lastNeighbor]);
+			System.out.println("++ result["+lastNeighbor+"] = class:"+((Pair<List<Object>, Double>)data[lastNeighbor]).getA().get(getClassAttribute())+" / distance:"+((Pair<List<Object>, Double>)data[lastNeighbor]).getB());
 		}
 		
-		// assert kNeighbors.size() == getKNearest() (except if some distances are the same)
 		return kNeighbors;
 	}
 	
@@ -163,10 +197,10 @@ public class NearestNeighbor extends ANearestNeighbor {
 		double d = 0;
 		for (int i=0; i<nbAttributes; i++) {
 			if ( (instance1.get(i) instanceof Double ) && (instance2.get(i) instanceof Double ) ) {
-				// scaling done in getNearest
-				d += ( Math.abs( ((Double)instance1.get(i)) - ((Double)instance2.get(i)) ) + translation[i] ) / scaling[i];
+				d += ( Math.abs( ((Double)instance1.get(i)) - ((Double)instance2.get(i)) )  ) / scaling[i];
 			} else if ( (instance1.get(i) instanceof String ) && (instance2.get(i) instanceof String ) ) {
-				d += ( (((String)instance1.get(i)).equals((String)instance2.get(i)) ? 1 : 0) + translation[i] ) / scaling[i];
+				// translation[i] == 0 , scaling[i] == 1
+				d += ((String)instance1.get(i)).equals((String)instance2.get(i)) ? 1 : 0;
 			} else {
 				// Should not happen
 				throw new RuntimeException("Attributes don't pass with each other");
@@ -182,11 +216,11 @@ public class NearestNeighbor extends ANearestNeighbor {
 		double sd2 = 0;
 		for (int i=0; i<nbAttributes; i++) {
 			if ( (instance1.get(i) instanceof Double ) && (instance2.get(i) instanceof Double ) ) {
-				// scaling done in getNearest
-				double d = ( Math.abs( ((Double)instance1.get(i)) - ((Double)instance2.get(i)) ) + translation[i] ) / scaling[i];
+				double d = ( Math.abs( ((Double)instance1.get(i)) - ((Double)instance2.get(i)) ) ) / scaling[i];
 				sd2 += Math.pow( d, 2);
 			} else if ( (instance1.get(i) instanceof String ) && (instance2.get(i) instanceof String ) ) {
-				double d = ( (((String)instance1.get(i)).equals((String)instance2.get(i)) ? 1 : 0) + translation[i] ) / scaling[i];
+				// translation[i] == 0 , scaling[i] == 1
+				double d = ((String)instance1.get(i)).equals((String)instance2.get(i)) ? 1 : 0 ;
 				sd2 += Math.pow( d, 2);
 			} else {
 				// Should not happen
@@ -205,22 +239,44 @@ public class NearestNeighbor extends ANearestNeighbor {
 			
 			results = new double[dim][2];
 			
-			// scaling
-
-			results[0] = new double[dim];
-			if (isNormalizing()) {
-				// TODO
-			} else {
-				for (int j=0; j<results[0].length; j++) {
-					results[0][j] = 1d;
-				}
-			}
-			
 			// translation
 			results[1] = new double[dim];
 			if (isNormalizing()) {
 				// TODO
+				// Look for negative values for each Double attribute in training data
+				for (int j=0; j<results.length; j++) {
+					for (int i=0; i<trainData.size(); i++) {
+						if (trainData.get(i).get(j) instanceof Double) {
+							Double d = (Double) trainData.get(i).get(j);
+							if ((d<0) && (results[1][j] < -d)) {
+								results[1][j] = -d;
+							}
+						}
+					}
+				}
 			} // else all values are equals to 0
+			
+			// scaling
+			results[0] = new double[dim];
+			if (isNormalizing()) {
+				// TODO
+				// Find the max of each Double attribute in training data
+				for (int j=0; j<results.length; j++) {
+					for (int i=0; i<trainData.size(); i++) {
+						if (trainData.get(i).get(j) instanceof Double) {
+							Double d = (Double) trainData.get(i).get(j);
+							if (results[0][j] < d + results[1][j]) {
+								results[0][j] = d + results[1][j];
+							}
+						}
+					}
+				}
+			} 
+			for (int j=0; j<results[0].length; j++) {
+					if (results[0][j] < 1) {
+						results[0][j] = 1d;
+					}
+			}
 		}
 		
 		return results;
