@@ -189,6 +189,13 @@ public class NearestNeighbor extends ANearestNeighbor {
 		return kNeighbors;
 	}
 	
+	/**
+	 * normalize the given attribute value into [0,1] with given translation and scaling
+	 */
+	private double normalize(double attrValue, double trans, double scale) {
+		return (attrValue+trans)/scale;
+	}
+	
 	@Override
 	protected double determineManhattanDistance(List<Object> instance1,
 			List<Object> instance2) {
@@ -197,7 +204,9 @@ public class NearestNeighbor extends ANearestNeighbor {
 		double d = 0;
 		for (int i=0; i<nbAttributes; i++) {
 			if ( (instance1.get(i) instanceof Double ) && (instance2.get(i) instanceof Double ) ) {
-				d += ( Math.abs( ((Double)instance1.get(i)) - ((Double)instance2.get(i)) )  ) / scaling[i];
+				double value1 = (Double) instance1.get(i);
+				double value2 = (Double) instance2.get(i);				
+				d += ( Math.abs(normalize(value1,translation[i],scaling[i]) - normalize(value2,translation[i],scaling[i]))  );
 			} else if ( (instance1.get(i) instanceof String ) && (instance2.get(i) instanceof String ) ) {
 				// translation[i] == 0 , scaling[i] == 1
 				d += ((String)instance1.get(i)).equals((String)instance2.get(i)) ? 1 : 0;
@@ -216,12 +225,14 @@ public class NearestNeighbor extends ANearestNeighbor {
 		double sd2 = 0;
 		for (int i=0; i<nbAttributes; i++) {
 			if ( (instance1.get(i) instanceof Double ) && (instance2.get(i) instanceof Double ) ) {
-				double d = ( Math.abs( ((Double)instance1.get(i)) - ((Double)instance2.get(i)) ) ) / scaling[i];
+				double value1 = (Double) instance1.get(i);
+				double value2 = (Double) instance2.get(i);				
+				double d = ( Math.abs(normalize(value1,translation[i],scaling[i]) - normalize(value2,translation[i],scaling[i]))  );
 				sd2 += Math.pow( d, 2);
 			} else if ( (instance1.get(i) instanceof String ) && (instance2.get(i) instanceof String ) ) {
 				// translation[i] == 0 , scaling[i] == 1
 				double d = ((String)instance1.get(i)).equals((String)instance2.get(i)) ? 1 : 0 ;
-				sd2 += Math.pow( d, 2);
+				sd2 += Math.pow( d, 2);  //the square of 0 or 1 is still 0 or 1..
 			} else {
 				// Should not happen
 				throw new RuntimeException("Attributes don't pass with each other");
