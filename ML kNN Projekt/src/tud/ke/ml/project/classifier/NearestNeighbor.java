@@ -278,6 +278,9 @@ public class NearestNeighbor extends ANearestNeighbor {
 				//compute scaling and translation
 				for (int attr=0; attr<dim; attr++) {
 					results[0][attr] = maxvalues[attr] - minvalues[attr]; //1-0=1 for string attributes
+					if (results[0][attr] == 0) {	// if all instances have the same value
+						results[0][attr] = 1;
+					}
 					results[1][attr] = -minvalues[attr];	//0 for string attributes
 				}
 			} else {
